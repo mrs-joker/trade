@@ -1,0 +1,12 @@
+{
+  "providers": [
+    "MrsJoker\\Trade\\TradeProvider"
+  ],
+  "aliases": [
+    {
+      "alias": "Trade",
+      "facade": "MrsJoker\\Trade\\Facades\\Trade"
+    }
+  ]
+
+}

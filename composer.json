@@ -1,0 +1,40 @@
+{
+  "name": "mrs-joker/trade",
+  "description": "trade",
+  "keywords": [
+    "trade"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Joker Tse",
+      "email": "mrs_joker@126.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^4.8 || ^5.7",
+    "mockery/mockery": "~0.9.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "MrsJoker\\Trade\\": "src/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0-dev"
+    },
+    "laravel": {
+      "providers": [
+        "MrsJoker\\Trade\\TradeProvider"
+      ],
+      "aliases": {
+        "Trade": "MrsJoker\\Trade\\Facades\\Trade"
+      }
+    }
+  },
+  "minimum-stability": "dev"
+}
