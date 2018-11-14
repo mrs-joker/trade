@@ -33,7 +33,7 @@ class TradeProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/../config/config.php' => config_path('trade.php')
+            __DIR__.'/config/config.php' => config_path('trade.php')
         ]);
     }
 
@@ -49,7 +49,7 @@ class TradeProvider extends ServiceProvider
 
         // merge default config
         $this->mergeConfigFrom(
-            __DIR__.'/../config/config.php',
+            __DIR__.'/config/config.php',
             'trade'
         );
 
