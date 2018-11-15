@@ -11,6 +11,7 @@ namespace MrsJoker\Trade\Rbac\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Auth\Guard;
+use MrsJoker\Trade\Facades\Trade;
 
 class Role
 {
@@ -34,12 +35,15 @@ class Role
 	 * @param  $roles
 	 * @return mixed
 	 */
+
+    //        dd(Trade::make('rbac')->executeCommand('user')->hasRole(1, ['test']));
 	public function handle($request, Closure $next, $roles)
 	{
-		if ($this->auth->guest() || !$request->user()->hasRole(explode('|', $roles))) {
-			abort(403);
-		}
 
+        $user = $request->user();
+        if ($this->auth->guest() || empty($user) || !Trade::make('rbac')->executeCommand('user')->hasRole($user->id, explode('|', $roles))) {
+            abort(403);
+        }
 		return $next($request);
 	}
 }

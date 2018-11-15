@@ -11,6 +11,7 @@ namespace MrsJoker\Trade\Rbac\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Auth\Guard;
+use MrsJoker\Trade\Facades\Trade;
 
 class Permission
 {
@@ -36,10 +37,10 @@ class Permission
 	 */
 	public function handle($request, Closure $next, $permissions)
 	{
-		if ($this->auth->guest() || !$request->user()->can(explode('|', $permissions))) {
+	    $user = $request->user();
+		if ($this->auth->guest() || empty($user) || !Trade::make('rbac')->executeCommand('user')->can($user->id, explode('|', $permissions))) {
 			abort(403);
-		}
-
+        }
 		return $next($request);
 	}
 }

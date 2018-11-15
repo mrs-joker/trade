@@ -92,7 +92,9 @@ class Role extends AbstractCommands
             $permission = $this->cachedPermissions($roleId);
             if (!empty($permission)) {
                 $permissionIds = array_pluck($permission->toArray(), 'id');
-                $this->detachPermission($roleId, $permissionIds);
+                if (!empty($permissionIds) && is_array($permissionIds)){
+                    $this->detachPermission($roleId, $permissionIds);
+                }
             }
         }
 
