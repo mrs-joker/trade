@@ -7,10 +7,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use MrsJoker\Trade\Rbac\Contracts\RoleInterface;
 use MrsJoker\Trade\Rbac\Traits\RoleTrait;
 
-class RbacRole  extends Model implements RoleInterface
+class RbacRole  extends Model
 {
     use SoftDeletes;
-    use RoleTrait;
 
     /**
      * Many-to-Many relations with the user model.
@@ -29,6 +28,6 @@ class RbacRole  extends Model implements RoleInterface
      */
     public function perms()
     {
-        return $this->belongsToMany(Config::get('entrust.permission'), Config::get('entrust.permission_role_table'), Config::get('entrust.role_foreign_key'), Config::get('entrust.permission_foreign_key'));
+        return $this->belongsToMany('MrsJoker\Trade\Rbac\Models\RbacPermission', 'rbac_permission_role', 'role_id', 'permission_id');
     }
 }

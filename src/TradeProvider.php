@@ -2,7 +2,9 @@
 
 namespace MrsJoker\Trade;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use MrsJoker\Trade\Facades\Trade;
 
 class TradeProvider extends ServiceProvider
 {
@@ -33,8 +35,9 @@ class TradeProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/config/config.php' => config_path('trade.php')
+            __DIR__ . '/config/config.php' => config_path('trade.php')
         ]);
+        $this->bladeDirectives();
     }
 
     /**
@@ -49,7 +52,7 @@ class TradeProvider extends ServiceProvider
 
         // merge default config
         $this->mergeConfigFrom(
-            __DIR__.'/config/config.php',
+            __DIR__ . '/config/config.php',
             'trade'
         );
 
@@ -59,8 +62,57 @@ class TradeProvider extends ServiceProvider
         });
 
         $app->alias('trade', 'MrsJoker\Trade\TradeManager');
-
     }
+
+
+    private function bladeDirectives()
+    {
+        //role
+        Blade::directive('role', function ($expression) {
+            $user = app("request")->user();
+            if (empty($user)){
+                return ;
+            }
+            return "<?php if(Trade::make('rbac')->executeCommand('user')->hasRole({$user->id}, {$expression})) : ?>";
+        });
+        Blade::directive('endrole', function ($expression) {
+            $user = app("request")->user();
+            if (empty($user)){
+                return ;
+            }
+            return "<?php endif; ?>";
+        });
+        //permission
+        Blade::directive('permission', function ($expression) {
+            $user = app("request")->user();
+            if (empty($user)){
+                return ;
+            }
+            return "<?php if(Trade::make('rbac')->executeCommand('user')->can({$user->id}, {$expression})) : ?>";
+        });
+        Blade::directive('endpermission', function ($expression) {
+            $user = app("request")->user();
+            if (empty($user)){
+                return ;
+            }
+            return "<?php endif; ?>";
+        });
+//        // Call to Entrust::can
+//        \Blade::directive('permission', function($expression) {
+        /*            return "<?php if (\\Entrust::can({$expression})) : ?>";*/
+//        });
+//        \Blade::directive('endpermission', function($expression) {
+        /*            return "<?php endif; // Entrust::can ?>";*/
+//        });
+//        // Call to Entrust::ability
+//        \Blade::directive('ability', function($expression) {
+        /*            return "<?php if (\\Entrust::ability({$expression})) : ?>";*/
+//        });
+//        \Blade::directive('endability', function($expression) {
+        /*            return "<?php endif; // Entrust::ability ?>";*/
+//        });
+    }
+
 
     /**
      * Get the services provided by the provider.
