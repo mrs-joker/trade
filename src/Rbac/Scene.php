@@ -23,7 +23,7 @@ class Scene extends AbstractScene
      * @return bool|mixed
      * @throws NotSupportedException
      */
-    public function newItem($item)
+    public function add($item)
     {
         return false;
     }
@@ -38,7 +38,7 @@ class Scene extends AbstractScene
         // TODO: Implement getItems() method.
     }
 
-    public function destoryItem($item)
+    public function destory($item)
     {
         // TODO: Implement destoryItem() method.
     }
@@ -48,7 +48,7 @@ class Scene extends AbstractScene
      * @return bool|mixed
      * @throws NotSupportedException
      */
-    public function editItem($item)
+    public function update($item)
     {
 
     }

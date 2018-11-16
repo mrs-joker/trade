@@ -18,31 +18,31 @@ abstract class AbstractScene
      * @param $item
      * @return mixed
      */
-    abstract protected function newItem($item);
+    abstract protected function add($item);
 
     /**
      * @param $item
      * @return mixed
      */
-    abstract protected function editItem($item);
+    abstract protected function update($item);
+
+//    /**
+//     * @param $item
+//     * @return mixed
+//     */
+//    abstract protected function getItem($item);
+//
+//    /**
+//     * @param $item
+//     * @return mixed
+//     */
+//    abstract protected function getItems($item);
 
     /**
      * @param $item
      * @return mixed
      */
-    abstract protected function getItem($item);
-
-    /**
-     * @param $item
-     * @return mixed
-     */
-    abstract protected function getItems($item);
-
-    /**
-     * @param $item
-     * @return mixed
-     */
-    abstract protected function destoryItem($item);
+    abstract protected function destory($id);
 
     /**
      * @param $item
@@ -54,10 +54,11 @@ abstract class AbstractScene
      * @return mixed
      * @throws NotSupportedException
      */
-    public function createModel()
+    public function createModel($m = null)
     {
-        if (isset($this->config['model'])) {
-            $class = '\\' . ltrim($this->config['model'], '\\');
+        $modelName = empty($m) ? $this->config['model'] : $m;
+        if (!empty($modelName)) {
+            $class = '\\' . ltrim($modelName, '\\');
             $model = new $class;
             if ($model instanceof Model) {
                 return $model;

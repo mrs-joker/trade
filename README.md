@@ -27,3 +27,12 @@ blade
                         @permission('test111')
                         <p>permission</p>
                         @endpermission
+                        
+                        
+category
+
+        Trade::make('category.menus')->add(['parent_id' => 6, 'name' => 'teqqst']);
+        Trade::make('category.menus')->update(['id' => 2, 'parent_id' => 1, 'name' => 'test1ss1', 'additional_data' => ['id' => 2]]);
+        Trade::make('category.menus')->cachedCategorys();
+        Trade::make('category.menus')->destory(2);
+        Trade::make('category.menus')->restore(2);

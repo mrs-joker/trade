@@ -4,6 +4,7 @@ namespace MrsJoker\Trade;
 
 use Closure;
 use MrsJoker\Trade\Exception\NotSupportedException;
+use MrsJoker\Trade\Rbac\Scene;
 
 class TradeManager
 {
@@ -53,19 +54,25 @@ class TradeManager
      */
     private function createScene($scene)
     {
-        if (is_string($scene) && isset($this->config[$scene])) {
 
-            $drivername = ucfirst($scene);
-            $sceneClass = sprintf('MrsJoker\\Trade\\%s\\Scene', $drivername);
+        if (is_string($scene)) {
 
-            if (class_exists($sceneClass)) {
+            $sceneClass = sprintf('MrsJoker\\Trade\\%s\\Scene', ucfirst($scene));
+            if (isset($this->config[$scene]) && class_exists($sceneClass)) {
                 $sceneModel = new $sceneClass;
                 $sceneModel->init($this->config[$scene]);
                 return $sceneModel;
+            }elseif (array_has($this->config, $scene)) {
+                $sceneData = explode('.', $scene);
+                $sceneClass = sprintf('MrsJoker\\Trade\\%s\\Scene', ucfirst($sceneData[0]));
+                if (class_exists($sceneClass)) {
+                    $sceneModel = new $sceneClass;
+                    $sceneModel->init(data_get($this->config, $scene, []));
+                    return $sceneModel;
+                }
             }
-
             throw new NotSupportedException(
-                "Scene ({$drivername}) could not be instantiated."
+                "Scene ({$scene}) could not be instantiated."
             );
         }
 
