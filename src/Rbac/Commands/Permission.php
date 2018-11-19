@@ -36,7 +36,7 @@ class Permission extends AbstractCommands
     {
         if (isset($item['id'])) {
             $item['updated_by'] = app('request')->user()->id;
-
+            $item['description'] = isset($item['description']) && !empty($item['description']) ? $item['description'] : '';
             $error = $this->validator($item)->errors()->first();
             if (empty($error)) {
                 $model = $this->createModel($this->config['permission'])->findOrFail($item['id']);

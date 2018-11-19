@@ -15,18 +15,24 @@ class Scene extends AbstractScene
      */
     public function runTrees($parentId = 0, $items = [])
     {
-        if (empty($items)){
+        if (empty($items)) {
             return $items;
         }
 
         $childItems = [];
+        $i = 0;
         foreach ($items as $key => $val) {
             if ($val->parent_id == $parentId) {
-                $childItems[$val->id] = $val->toArray();
+                $childItems[$i] = $val->toArray();
+                $childItems[$i]['text'] = $val->name;
+                $childItems[$i]['icon'] = '';
+                $childItems[$i]['tags'] = ['排序：' . $val->sort_order];
+
                 $child = $this->runTrees($val->id, $items);
                 if (!empty($child)) {
-                    $childItems[$val->id]['child'] = $child;
+                    $childItems[$i]['nodes'] = $child;
                 }
+                $i++;
             }
         }
 
@@ -39,16 +45,22 @@ class Scene extends AbstractScene
      * @return mixed
      * @throws NotSupportedException
      */
-    public function cachedCategorys(array $select = [])
+    public function cachedCategorys(array $select = [], $parentId = -1)
     {
 
         $model = $this->createModel();
         $tableName = $model->getTable();
         $cacheKey = $this->config['cache_prefix'] . $tableName;
 
+        //选择栏目
         if (!empty($select)) {
             $model = $model->select($select);
-            $cacheKey = $this->config['cache_prefix'] . $tableName . implode('-', $select);
+            $cacheKey = $cacheKey . implode('-', $select);
+        }
+        //选择parentId作为条件
+        if ($parentId >= 0) {
+            $model = $model->where('parent_id', $parentId);
+            $cacheKey = $cacheKey . '_' . $parentId;
         }
 
         return Cache::tags([$tableName])->remember($cacheKey, 60 * 24 * 30, function () use ($model) {
@@ -81,7 +93,7 @@ class Scene extends AbstractScene
                 if ($model->id == $value) {
                     $fail(':attribute can not be your own father!');
                 }
-                $dot = array_dot($this->runTrees($model->id,$this->cachedCategorys(['id','parent_id'])));
+                $dot = array_dot($this->runTrees($model->id, $this->cachedCategorys(['id', 'parent_id'])));
 
                 foreach ($dot as $k => $v) {
                     if (str_is('*.id', $k) && $v == (int)$value) {
@@ -180,8 +192,8 @@ class Scene extends AbstractScene
             $model->parent_id = $item['parent_id'];
             $model->category_code = $item['category_code'];
             $model->name = $item['name'];
-            $model->additional_data = isset($itemData['additional_data']) ? $item['additional_data'] : [];
-            $model->sort_order = isset($itemData['sort_order']) ? $item['sort_order'] : 999;
+            $model->additional_data = isset($item['additional_data']) ? $item['additional_data'] : [];
+            $model->sort_order = isset($item['sort_order']) ? $item['sort_order'] : 999;
             $model->created_by = $item['created_by'];
             $model->updated_by = $item['updated_by'];
 
@@ -203,12 +215,11 @@ class Scene extends AbstractScene
             throw new NotSupportedException("please login");
         }
         $model = $this->createModel()->findOrFail($id);
-        if ($model->delete()){
+        if ($model->delete()) {
             Cache::tags($model->getTable())->flush();
             return true;
         }
     }
-
 
 
     public function restore($id)
@@ -220,7 +231,7 @@ class Scene extends AbstractScene
 
         $model = $this->createModel()->onlyTrashed()->findOrFail($id);
 
-        if ($model->restore()){
+        if ($model->restore()) {
             Cache::tags($model->getTable())->flush();
             return true;
         }

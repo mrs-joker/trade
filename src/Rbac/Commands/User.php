@@ -19,7 +19,25 @@ class User extends AbstractCommands
 
     public function add($item)
     {
-        // TODO: Implement add() method.
+        $item['created_by'] = app('request')->user()->id;
+        $item['updated_by'] = app('request')->user()->id;
+        $item['description'] = isset($item['description']) ? $item['description'] : '';
+        $error = $this->validator($item)->errors()->first();
+        if (empty($error)) {
+            $model = $this->createModel($this->config['role']);
+            $model->name = $item['name'];
+            $model->display_name = $item['display_name'];
+            $model->description = $item['description'];
+            $model->created_by = $item['created_by'];
+            $model->updated_by = $item['updated_by'];
+
+            if ($model->save()) {
+                Cache::tags($model->getTable())->flush();
+                return true;
+            }
+            throw new NotSupportedException("The server is busy. Please try again later.");
+        }
+        throw new NotSupportedException($error);
     }
 
     public function update($item)

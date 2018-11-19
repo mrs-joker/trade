@@ -51,6 +51,26 @@ class Role extends AbstractCommands
     }
 
     /**
+     * Detach ass permissions from current role.
+     *
+     * @param object|array $permission
+     *
+     * @return void
+     */
+    public function detachPermissions($roleId)
+    {
+
+        $permission = $this->cachedPermissions($roleId);
+        if (!empty($permission)) {
+            $permissionIds = array_pluck($permission->toArray(), 'id');
+            if (!empty($permissionIds) && is_array($permissionIds)) {
+                $this->detachPermission($roleId, $permissionIds);
+            }
+        }
+        Cache::tags($this->config['table_permission_role'])->flush();
+    }
+
+    /**
      * Detach permission from current role.
      *
      * @param object|array $permission
@@ -92,7 +112,7 @@ class Role extends AbstractCommands
             $permission = $this->cachedPermissions($roleId);
             if (!empty($permission)) {
                 $permissionIds = array_pluck($permission->toArray(), 'id');
-                if (!empty($permissionIds) && is_array($permissionIds)){
+                if (!empty($permissionIds) && is_array($permissionIds)) {
                     $this->detachPermission($roleId, $permissionIds);
                 }
             }
@@ -112,12 +132,12 @@ class Role extends AbstractCommands
     {
         if (isset($item['id'])) {
             $item['updated_by'] = app('request')->user()->id;
-
+            $item['description'] = isset($item['description']) ? $item['description'] : '';
             $error = $this->validator($item)->errors()->first();
             if (empty($error)) {
                 $model = $this->createModel($this->config['role'])->findOrFail($item['id']);
                 $model->display_name = $item['display_name'];
-                $model->description = isset($item['description']) ? $item['description'] : '';
+                $model->description = $item['description'];
                 $model->updated_by = $item['updated_by'];
 
                 if ($model->save()) {
@@ -138,13 +158,13 @@ class Role extends AbstractCommands
 
         $item['created_by'] = app('request')->user()->id;
         $item['updated_by'] = app('request')->user()->id;
-
+        $item['description'] = isset($item['description']) ? $item['description'] : '';
         $error = $this->validator($item)->errors()->first();
         if (empty($error)) {
             $model = $this->createModel($this->config['role']);
             $model->name = $item['name'];
             $model->display_name = $item['display_name'];
-            $model->description = isset($item['description']) ? $item['description'] : '';
+            $model->description = $item['description'];
             $model->created_by = $item['created_by'];
             $model->updated_by = $item['updated_by'];
 
