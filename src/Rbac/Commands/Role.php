@@ -61,13 +61,12 @@ class Role extends AbstractCommands
     {
 
         $permission = $this->cachedPermissions($roleId);
-        if (!empty($permission)) {
+        if (!$permission->isEmpty()) {
             $permissionIds = array_pluck($permission->toArray(), 'id');
             if (!empty($permissionIds) && is_array($permissionIds)) {
                 $this->detachPermission($roleId, $permissionIds);
             }
         }
-        Cache::tags($this->config['table_permission_role'])->flush();
     }
 
     /**

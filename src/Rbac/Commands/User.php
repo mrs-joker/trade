@@ -73,6 +73,22 @@ class User extends AbstractCommands
 
     }
 
+    public function cachedRolesAll()
+    {
+
+        $model = $this->createModel($this->config['role']);
+        $tableName = $model->getTable();
+        $tag = [
+            $tableName,
+        ];
+        $cacheKey = $this->config['cache_prefix'] . $tableName . '_all';
+        return Cache::tags($tag)->remember($cacheKey, 60 * 24 * 30, function () use ($model) {
+            return $model->get();
+        });
+
+    }
+
+
     /**
      * Checks if the user has a role by its name.
      *
@@ -171,4 +187,14 @@ class User extends AbstractCommands
         Cache::tags($this->config['table_role_user'])->flush();
     }
 
+    public function detachRoles($userId){
+
+        $role = $this->cachedRoles($userId);
+        if (!$role->isEmpty()){
+            $roles = array_pluck($role->toArray(),'id');
+            if (!empty($roles) && is_array($roles)){
+                $this->detachRole($userId,$roles);
+            }
+        }
+    }
 }
