@@ -14,28 +14,17 @@ class Scene extends AbstractScene
      * @return \Illuminate\Contracts\Validation\Validator|mixed
      * @throws \MrsJoker\Trade\Exception\NotSupportedException
      */
-    protected function validator($item)
+    protected function validator($item, $model = null)
     {
-        if (isset($item['id']) && !empty($item['id'])) {
-            $model = $this->createModel()->findOrFail($data['id']);
-            $rules['tree_key'] = [function ($attribute, $value, $fail) use ($model) {
-                if ($model->$attribute != $value) {
-                    $fail(':attribute can not be change');
-                }
-            }];
-
-            $find = $model->find($item['id'])->first();
-
-            $rules['goods_code'] = "string|max:100|exists:{$tableName},goods_code,deleted_at,NULL";
+        if (isset($item['id']) && !empty($model)) {
+            $rules['code'] = "required|string|max:100";
         } else {
             $model = $this->createModel();
-
-            $rules['goods_code'] = "required|string|max:100|unique:{$model->getTable()}";
+            $rules['code'] = "required|string|max:100|unique:{$model->getTable()}";
+            $rules['created_by'] = "required|exists:{$this->createModel($this->config['user'])},id,deleted_at,NULL";
         }
-
-
-        $rules['goods_name'] = 'required|string|max:255';
-        $rules['goods_subname'] = 'string|max:512';
+        $rules['name'] = 'required|string|max:255';
+        $rules['subname'] = 'string|max:512';
         $rules['sale_num'] = 'numeric|max:99999999';
         $rules['sale_num_virtual'] = 'numeric|max:99999999';
         $rules['is_sale'] = 'required|boolean';
@@ -45,12 +34,53 @@ class Scene extends AbstractScene
         $rules['sale_start'] = 'date';
         $rules['sale_end'] = 'date';
         $rules['sort_order'] = 'numeric|max:99999999';
-        $rules['created_by'] = 'required|exists:users,id,deleted_at,NULL';
-        $rules['updated_by'] = 'required|exists:users,id,deleted_at,NULL';
-
+        $rules['updated_by'] = "required|exists:{$this->createModel($this->config['user'])},id,deleted_at,NULL";
 
         return \Illuminate\Support\Facades\Validator::make($item, $rules);
 
+    }
+
+    /**
+     * 设置默认数据
+     * @param $item
+     * @param null $model
+     * @return mixed
+     */
+    protected function setDefaultValues($item, $model = null)
+    {
+        if (empty(app('request')->user())) {
+            throw new NotSupportedException("Please login.");
+        }
+        if (isset($item['id']) && !empty($model)) {
+            $item['name'] = $item['name'] ?? $model->name;
+            $item['subname'] = $item['subname'] ?? $model->subname;;
+            $item['sale_num'] = $item['sale_num'] ?? $model->sale_num;
+            $item['sale_num_virtual'] = $item['sale_num_virtual'] ?? $model->sale_num_virtual;
+            $item['is_sale'] = $item['is_sale'] ?? $model->is_sale;
+            $item['viewed'] = $item['viewed'] ?? $model->viewed;
+            $item['buy_limit'] = $item['buy_limit'] ?? $model->buy_limit;
+            $item['show_sale_time'] = $item['show_sale_time'] ?? $model->show_sale_time;
+            $item['sale_start'] = $item['sale_start'] ?? $model->sale_start;
+            $item['sale_end'] = $item['sale_end'] ?? $model->sale_end;
+            $item['sort_order'] = $item['sort_order'] ?? $model->sort_order;
+            $item['updated_by'] = $item['updated_by'] ?? app('request')->user()->id;
+        } else {
+            $item['name'] = $item['name'] ?? '';
+            $item['code'] = $item['code'] ?? str_random(60);
+            $item['subname'] = $item['subname'] ?? '';
+            $item['sale_num'] = $item['sale_num'] ?? 0;
+            $item['sale_num_virtual'] = $item['sale_num_virtual'] ?? 0;
+            $item['is_sale'] = $item['is_sale'] ?? 0;
+            $item['viewed'] = $item['viewed'] ?? 0;
+            $item['buy_limit'] = $item['buy_limit'] ?? 0;
+            $item['show_sale_time'] = $item['show_sale_time'] ?? 0;
+            $item['sale_start'] = $item['sale_start'] ?? null;
+            $item['sale_end'] = $item['sale_end'] ?? null;
+            $item['sort_order'] = $item['sort_order'] ?? 999;
+            $item['created_by'] = $item['created_by'] ?? app('request')->user()->id;
+            $item['updated_by'] = $item['updated_by'] ?? app('request')->user()->id;
+        }
+        return $item;
     }
 
     /**
@@ -58,20 +88,15 @@ class Scene extends AbstractScene
      * @return bool|mixed
      * @throws NotSupportedException
      */
-    public function newItem($item)
+    public function add($item)
     {
-
-        if (empty(app('request')->user())) {
-            return app('redirect')->to('login');
-        }
-        $item['goods_code'] = isset($item['goods_code']) && !empty($item['goods_code']) ? $item['goods_code'] : str_random(60);
+        $item = $this->setDefaultValues($item);
         $error = $this->validator($item)->errors()->first();
         if (empty($error)) {
             $model = $this->createModel();
-
-            $model->goods_name = $item['goods_name'];
-            $model->goods_subname = $item['goods_subname'];
-            $model->goods_code = $item['goods_code'];
+            $model->name = $item['name'];
+            $model->subname = $item['subname'];
+            $model->code = $item['code'];
             $model->sale_num = $item['sale_num'];
             $model->sale_num_virtual = $item['sale_num_virtual'];
             $model->is_sale = $item['is_sale'];
@@ -81,8 +106,8 @@ class Scene extends AbstractScene
             $model->sale_start = $item['sale_start'];
             $model->sale_end = $item['sale_end'];
             $model->sort_order = $item['sort_order'];
-            $model->created_by = app('request')->user()->id;
-            $model->updated_by = app('request')->user()->id;
+            $model->created_by = $item['created_by'];
+            $model->updated_by = $item['updated_by'];
 
             if ($model->save()) {
                 Cache::tags($model->getTable())->flush();
@@ -104,7 +129,7 @@ class Scene extends AbstractScene
         // TODO: Implement getItems() method.
     }
 
-    public function destoryItem($item)
+    public function destory($item)
     {
         // TODO: Implement destoryItem() method.
     }
@@ -114,21 +139,17 @@ class Scene extends AbstractScene
      * @return bool|mixed
      * @throws NotSupportedException
      */
-    public function editItem($item)
+    public function update($item)
     {
-        if (empty(app('request')->user())) {
-            return app('redirect')->to('login');
-        }
 
         if (isset($item['id']) && !empty($item['id'])) {
-
-            $error = $this->validator($item)->errors()->first();
+            $model = $this->createModel()->findOrFail($item['id']);
+            $item = $this->setDefaultValues($item, $model);
+            $error = $this->validator($item, $model)->errors()->first();
             if (empty($error)) {
 
-                $model = $this->createModel()->find($item['id']);
-                $model->goods_name = $item['goods_name'];
-                $model->goods_subname = $item['goods_subname'];
-                $model->goods_code = $item['goods_code'];
+                $model->name = $item['name'];
+                $model->subname = $item['subname'];
                 $model->sale_num = $item['sale_num'];
                 $model->sale_num_virtual = $item['sale_num_virtual'];
                 $model->is_sale = $item['is_sale'];
@@ -138,8 +159,7 @@ class Scene extends AbstractScene
                 $model->sale_start = $item['sale_start'];
                 $model->sale_end = $item['sale_end'];
                 $model->sort_order = $item['sort_order'];
-                $model->created_by = app('request')->user()->id;
-                $model->updated_by = app('request')->user()->id;
+                $model->updated_by = $item['updated_by'];
 
                 if ($model->save()) {
                     Cache::tags($model->getTable())->flush();
@@ -151,29 +171,6 @@ class Scene extends AbstractScene
             throw new NotSupportedException($error);
         }
         throw new TreeException("id can not be null.");
-
-//
-//        if (isset($item['id']) && !empty($item['id'])) {
-//            $error = $this->validator($item)->errors()->first();
-//            if (empty($error)) {
-//                $model = $this->createModel()->find($item['id']);
-//                $model->parent_id = $item['parent_id'];
-//                $model->name = $item['name'];
-//                if (isset($item['additional_data']) && is_array($item['additional_data'])) {
-//                    $model->additional_data = $item['additional_data'];
-//                }
-//                if (isset($item['order_num'])) {
-//                    $model->order_num = $item['order_num'];
-//                }
-//                if ($model->save()) {
-//                    Cache::tags($model->getTable())->flush();
-//                    return true;
-//                }
-//                throw new TreeException("The server is busy. Please try again later.");
-//            }
-//            throw new TreeException($error);
-//        }
-//        throw new TreeException("id can not be null.");
     }
 
 

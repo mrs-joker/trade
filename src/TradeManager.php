@@ -38,7 +38,7 @@ class TradeManager
     }
 
     /**
-     * Initiates an Image instance from different input types
+     * Initiates an Trade instance from different input types
      *
      * @param  mixed $data
      *

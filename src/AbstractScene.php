@@ -79,7 +79,6 @@ abstract class AbstractScene
     {
 
         $commandName = $this->getCommandClassName($name);
-//        dd($arguments);
         $command = new $commandName($this->config, $arguments);
 
         return $command;
@@ -101,7 +100,6 @@ abstract class AbstractScene
         if (class_exists($classnameLocal)) {
             return $classnameLocal;
         }
-
 
         throw new NotSupportedException(
             "Command ({$name}) is not available for driver ({$drivername})."

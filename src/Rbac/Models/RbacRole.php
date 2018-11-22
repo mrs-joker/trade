@@ -5,8 +5,6 @@ namespace MrsJoker\Trade\Rbac\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Config;
-use MrsJoker\Trade\Rbac\Contracts\RoleInterface;
-use MrsJoker\Trade\Rbac\Traits\RoleTrait;
 
 class RbacRole  extends Model
 {

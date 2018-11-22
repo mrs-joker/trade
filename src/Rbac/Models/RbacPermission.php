@@ -2,10 +2,11 @@
 namespace MrsJoker\Trade\Rbac\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use MrsJoker\Trade\Rbac\Contracts\PermissionInterface;
 
-class RbacPermission extends Model implements PermissionInterface
+
+class RbacPermission extends Model
 {
     use SoftDeletes;
     /**
@@ -15,6 +16,8 @@ class RbacPermission extends Model implements PermissionInterface
      */
     public function roles()
     {
-        return $this->belongsToMany(Config::get('entrust.role'), Config::get('entrust.permission_role_table'), Config::get('entrust.permission_foreign_key'), Config::get('entrust.role_foreign_key'));
+        return $this->belongsToMany(Config::get('trade.rbac.role'), Config::get('trade.rbac.table_permission_role'), Config::get('trade.rbac.permission_pivot_key'), Config::get('trade.rbac.role_pivot_key'));
     }
+
+
 }

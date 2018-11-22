@@ -1,0 +1,22 @@
+CREATE TABLE `goods` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '商品ID',
+  `name` varchar(255) COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '商品名称',
+  `subname` varchar(512) COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '商品副标题',
+  `code` varchar(100) COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '商品编码',
+  `sale_num` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '成交量',
+  `sale_num_virtual` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '虚拟成交量',
+  `is_sale` tinyint(1) NOT NULL DEFAULT '-1' COMMENT '是否上架(1:是,-1:否)',
+  `viewed` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '访问量',
+  `buy_limit` tinyint(2) unsigned NOT NULL DEFAULT '0' COMMENT '购买限制(0:表示不限制)',
+  `show_sale_time` tinyint(1) NOT NULL DEFAULT '-1' COMMENT '是否显示下架时间',
+  `sale_start` timestamp NULL DEFAULT NULL COMMENT '上架时间',
+  `sale_end` timestamp NULL DEFAULT NULL COMMENT '下架时间',
+  `sort_order` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '排序值',
+  `created_by` int(10) NOT NULL DEFAULT '0' COMMENT '添加数据的人',
+  `updated_by` int(10) NOT NULL DEFAULT '0' COMMENT '最后修改数据人',
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `goods_code_index_1` (`goods_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='商品基础表';
