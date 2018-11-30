@@ -49,6 +49,11 @@ class TradeManager
         return $this->createScene($scene);
     }
 
+    public function rootPath($path = null)
+    {
+        return env('APP_URL', '') . '/public/' . $path;
+    }
+
     /**
      * Creates a scene instance according to config settings
      */
@@ -62,7 +67,7 @@ class TradeManager
                 $sceneModel = new $sceneClass;
                 $sceneModel->init($this->config[$scene]);
                 return $sceneModel;
-            }elseif (array_has($this->config, $scene)) {
+            } elseif (array_has($this->config, $scene)) {
                 $sceneData = explode('.', $scene);
                 $sceneClass = sprintf('MrsJoker\\Trade\\%s\\Scene', ucfirst($sceneData[0]));
                 if (class_exists($sceneClass)) {

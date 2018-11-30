@@ -40,14 +40,72 @@ class User extends AbstractCommands
         throw new NotSupportedException($error);
     }
 
-    public function update($item)
+    public function setDefaultValues($item = [], $model = null)
     {
-        // TODO: Implement update() method.
+
+        if (isset($item['id']) && !empty($model)) {
+            $item['name'] = $item['name'] ?? $model->name;
+            $item['email'] = $item['email'] ?? $model->email;
+            $item['password'] = $item['password'];
+
+        } else {
+            $item['name'] = $item['name'] ?? '';
+            $item['email'] = $item['email'] ?? '';
+            $item['password'] = '';
+        }
+
+        return $item;
     }
 
-    public function validator($item)
+
+    public function update($item)
     {
-        // TODO: Implement validator() method.
+        if (isset($item['id'])) {
+
+            $model = $this->createModel($this->config['user'])->findOrFail($item['id']);
+            $item = $this->setDefaultValues($item, $model);
+            $error = $this->validator($item, $model)->errors()->first();
+            if (empty($error)) {
+                $model->name = $item['name'];
+                $model->email = $item['email'];
+                if (isset($item['password']) && !empty($item['password'])) {
+                    $model->password = bcrypt($item['password']);
+                }
+                if ($model->save()) {
+                    Cache::tags($model->getTable())->flush();
+                    return true;
+                }
+                throw new NotSupportedException("The server is busy. Please try again later.");
+            }
+            throw new NotSupportedException($error);
+        }
+        throw new NotSupportedException("id is required");
+    }
+
+    public function validator($item, $model = null)
+    {
+
+        if (isset($item['id']) && !empty($item['id']) && !empty($model)) {
+
+            $rules['name'] = [function ($attribute, $value, $fail) use ($model) {
+                if (!empty($value) && $model->$attribute != $value) {
+                    $user = $this->createModel($this->config['user'])->where('name', $value)->first();
+                    if (!empty($user)) {
+                        $fail('User name already exists.');
+                    }
+                }
+            }];
+            $rules['email'] = [function ($attribute, $value, $fail) use ($model) {
+                if (!empty($value) && $model->$attribute != $value) {
+                    $user = $this->createModel($this->config['user'])->where('email', $value)->first();
+                    if (!empty($user)) {
+                        $fail('User mailbox already exists');
+                    }
+                }
+            }];
+            return \Illuminate\Support\Facades\Validator::make($item, $rules);
+        }
+        return false;
     }
 
     /**
@@ -187,14 +245,39 @@ class User extends AbstractCommands
         Cache::tags($this->config['table_role_user'])->flush();
     }
 
-    public function detachRoles($userId){
+    public function detachRoles($userId)
+    {
 
         $role = $this->cachedRoles($userId);
-        if (!$role->isEmpty()){
-            $roles = array_pluck($role->toArray(),'id');
-            if (!empty($roles) && is_array($roles)){
-                $this->detachRole($userId,$roles);
+        if (!$role->isEmpty()) {
+            $roles = array_pluck($role->toArray(), 'id');
+            if (!empty($roles) && is_array($roles)) {
+                $this->detachRole($userId, $roles);
             }
         }
+    }
+
+    public function destory($userId)
+    {
+
+        $model = $this->createModel($this->config['user'])->findOrFail($userId);
+
+        $tag = [
+            $model->getTable(),
+            $this->config['table_role_user'],
+            $this->createModel($this->config['role'])->getTable()
+        ];
+        Cache::tags($tag)->flush();
+        return $model->delete();
+    }
+
+
+    public function restore($userId)
+    {   //soft delete undo's
+
+        $model = $this->createModel($this->config['user'])->onlyTrashed()->findOrFail($userId);
+        $model->restore();
+        Cache::tags($model->getTable())->flush();
+        return true;
     }
 }

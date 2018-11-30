@@ -74,13 +74,12 @@ class Scene extends AbstractScene
      * @return \Illuminate\Contracts\Validation\Validator|mixed
      * @throws \MrsJoker\Trade\Exception\NotSupportedException
      */
-    protected function validator($item)
+    protected function validator($item, $model = null)
     {
 
         $user = $this->createModel($this->config['user']);
-        if (isset($item['id']) && !empty($item['id'])) {
+        if (isset($item['id']) && !empty($item['id']) && !empty($model)) {
 
-            $model = $this->createModel()->findOrFail($item['id']);
             $rules['name'] = 'string|max:255';
             $rules['category_code'] = [function ($attribute, $value, $fail) use ($model) {
                 if (!empty($value) && $model->$attribute != $value) {
@@ -130,6 +129,53 @@ class Scene extends AbstractScene
 
     }
 
+    /**
+     * 设置默认数据
+     * @param $item
+     * @param null $model
+     * @return mixed
+     */
+    public function setDefaultValues($item, $model = null)
+    {
+        $user = app('request')->user();
+        if (empty($user)) {
+            throw new NotSupportedException("Please login.");
+        }
+        if (isset($item['id']) && !empty($model)) {
+            $item['parent_id'] = $item['parent_id'] ?? $model->parent_id;
+            $item['name'] = $item['name'] ?? $model->name;
+            if (isset($item['additional_data']) && !empty($item['additional_data'])){
+                if (empty($item['additional_data']['menu_permission'])){
+                    $item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
+                }
+            }else{
+                $item['additional_data'] = $model->additional_data;
+            }
+            //$item['additional_data'] = $item['additional_data'] ?? $model->additional_data;
+            $item['sort_order'] = $item['sort_order'] ?? $model->sort_order;
+            $item['updated_by'] = $item['updated_by'] ?? app('request')->user()->id;
+        } else {
+            $item['parent_id'] = $item['parent_id'] ?? 0;
+            $item['category_code'] = $item['category_code'] ?? str_random(60);
+            $item['name'] = $item['name'] ?? '';
+            if (isset($item['additional_data'])){
+                if (empty($item['additional_data']['menu_permission'])){
+                    $item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
+                }
+            }else{
+                $item['additional_data'] = [];
+            }
+
+
+
+            //$item['additional_data'] = $item['additional_data'] ?? [];
+            $item['sort_order'] = $item['sort_order'] ?? 999;
+            $item['created_by'] = $item['created_by'] ?? $user->id;
+            $item['updated_by'] = $item['updated_by'] ?? $user->id;
+        }
+        return $item;
+    }
+
 
     /**
      * @param $item
@@ -138,23 +184,17 @@ class Scene extends AbstractScene
      */
     public function update($item)
     {
-        $user = app('request')->user();
-        if (empty($user)) {
-            throw new NotSupportedException("please login");
-        }
-
-        $item['updated_by'] = $user->id;
 
         if (isset($item['id']) && !empty($item['id'])) {
-
-
-            $error = $this->validator($item)->errors()->first();
+            $model = $this->createModel()->findOrFail($item['id']);
+            $item = $this->setDefaultValues($item, $model);
+            $error = $this->validator($item, $model)->errors()->first();
             if (empty($error)) {
-                $model = $this->createModel()->findOrFail($item['id']);
-                $model->parent_id = isset($item['parent_id']) && !empty($item['parent_id']) ? $item['parent_id'] : $model->parent_id;
-                $model->name = isset($item['name']) && !empty($item['name']) ? $item['name'] : $model->name;
-                $model->additional_data = isset($item['additional_data']) && !empty($item['additional_data']) ? $item['additional_data'] : $model->additional_data;
-                $model->sort_order = isset($item['sort_order']) && !empty($item['sort_order']) ? $item['sort_order'] : $model->sort_order;
+
+                $model->parent_id = $item['parent_id'];
+                $model->name = $item['name'];
+                $model->additional_data = $item['additional_data'];
+                $model->sort_order = $item['sort_order'];
                 $model->updated_by = $item['updated_by'];
 
                 if ($model->save()) {
@@ -177,23 +217,15 @@ class Scene extends AbstractScene
     public function add($item)
     {
 
-        $user = app('request')->user();
-        if (empty($user)) {
-            throw new NotSupportedException("please login");
-        }
-
-        $item['category_code'] = isset($item['category_code']) && !empty($item['category_code']) ? $item['category_code'] : str_random(60);
-        $item['created_by'] = $user->id;
-        $item['updated_by'] = $user->id;
-
+        $item = $this->setDefaultValues($item);
         $error = $this->validator($item)->errors()->first();
         if (empty($error)) {
             $model = $this->createModel();
             $model->parent_id = $item['parent_id'];
             $model->category_code = $item['category_code'];
             $model->name = $item['name'];
-            $model->additional_data = isset($item['additional_data']) ? $item['additional_data'] : [];
-            $model->sort_order = isset($item['sort_order']) ? $item['sort_order'] : 999;
+            $model->additional_data = $item['additional_data'];
+            $model->sort_order = $item['sort_order'];
             $model->created_by = $item['created_by'];
             $model->updated_by = $item['updated_by'];
 
@@ -201,10 +233,18 @@ class Scene extends AbstractScene
                 Cache::tags($model->getTable())->flush();
                 return true;
             }
-
             throw new NotSupportedException("The server is busy. Please try again later.");
         }
         throw new NotSupportedException($error);
+    }
+
+    public function save($item)
+    {
+        if (isset($item['id']) && !empty($item)) {
+            $this->update($item);
+        } else {
+            $this->add($item);
+        }
     }
 
 

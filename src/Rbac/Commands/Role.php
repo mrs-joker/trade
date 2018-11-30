@@ -9,10 +9,10 @@ use MrsJoker\Trade\Rbac\AbstractCommands;
 class Role extends AbstractCommands
 {
 
-    protected function validator($item)
+    protected function validator($item, $model = null)
     {
-        if (isset($item['id']) && !empty($item['id'])) {
-            $model = $this->createModel($this->config['role'])->findOrFail($item['id']);
+        if (isset($item['id']) && !empty($item['id']) && !empty($model)) {
+
             $rules['name'] = [function ($attribute, $value, $fail) use ($model) {
                 if (!empty($value) && $model->$attribute != $value) {
                     $fail(':attribute can not be change');
@@ -30,6 +30,19 @@ class Role extends AbstractCommands
 
         return \Illuminate\Support\Facades\Validator::make($item, $rules);
 
+    }
+
+    public function cachedAllPermissions()
+    {
+        $model = $this->createModel($this->config['permission']);
+        $tableName = $model->getTable();
+        $cacheKey = $this->config['cache_prefix'] . $tableName;
+        $tag = [
+            $tableName
+        ];
+        return Cache::tags($tag)->remember($cacheKey, 60 * 24 * 30, function () use ($model) {
+            return $model->get();
+        });
     }
 
 
@@ -116,7 +129,6 @@ class Role extends AbstractCommands
                 }
             }
         }
-
         $tag = [
             $model->getTable(),
             $this->config['table_permission_role'],
@@ -126,15 +138,19 @@ class Role extends AbstractCommands
         return $model->delete();
     }
 
-
+    /**
+     * @param $item
+     * @return bool|mixed
+     * @throws NotSupportedException
+     */
     public function update($item)
     {
         if (isset($item['id'])) {
-            $item['updated_by'] = app('request')->user()->id;
-            $item['description'] = isset($item['description']) ? $item['description'] : '';
-            $error = $this->validator($item)->errors()->first();
+
+            $model = $this->createModel($this->config['role'])->findOrFail($item['id']);
+            $item = $this->setDefaultValues($item, $model);
+            $error = $this->validator($item, $model)->errors()->first();
             if (empty($error)) {
-                $model = $this->createModel($this->config['role'])->findOrFail($item['id']);
                 $model->display_name = $item['display_name'];
                 $model->description = $item['description'];
                 $model->updated_by = $item['updated_by'];
@@ -147,17 +163,13 @@ class Role extends AbstractCommands
             }
             throw new NotSupportedException($error);
         }
-
         throw new NotSupportedException("id is required");
-
     }
 
     public function add($item)
     {
 
-        $item['created_by'] = app('request')->user()->id;
-        $item['updated_by'] = app('request')->user()->id;
-        $item['description'] = isset($item['description']) ? $item['description'] : '';
+        $item = $this->setDefaultValues($item);
         $error = $this->validator($item)->errors()->first();
         if (empty($error)) {
             $model = $this->createModel($this->config['role']);
@@ -176,6 +188,31 @@ class Role extends AbstractCommands
         throw new NotSupportedException($error);
     }
 
+    /**
+     * 设置默认数据
+     * @param $item
+     * @param null $model
+     * @return mixed
+     */
+    public function setDefaultValues($item, $model = null)
+    {
+
+        $user = app('request')->user();
+        if (isset($item['id']) && !empty($model)) {
+            $item['name'] = $item['name'] ?? $model->name;
+            $item['display_name'] = $item['display_name'] ?? $model->display_name;
+            $item['description'] = $item['description'] ?? $model->description;
+            $item['updated_by'] = $item['updated_by'] ?? $user->id;
+        } else {
+            $item['name'] = $item['name'] ?? str_random(60);
+            $item['display_name'] = $item['display_name'] ?? '';
+            $item['description'] = $item['description'] ?? '';
+            $item['created_by'] = $item['created_by'] ?? $user->id;
+            $item['updated_by'] = $item['updated_by'] ?? $user->id;
+        }
+        return $item;
+
+    }
 
     public function restore($roleId)
     {   //soft delete undo's
@@ -219,5 +256,13 @@ class Role extends AbstractCommands
         return false;
     }
 
+    public function save($item)
+    {
+        if (isset($item['id']) && !empty($item)) {
+            $this->update($item);
+        } else {
+            $this->add($item);
+        }
+    }
 
 }
