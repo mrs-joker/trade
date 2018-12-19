@@ -146,7 +146,7 @@ class Scene extends AbstractScene
             $item['name'] = $item['name'] ?? $model->name;
             if (isset($item['additional_data']) && !empty($item['additional_data'])){
                 if (empty($item['additional_data']['menu_permission'])){
-                    $item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
+                    //$item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
                 }
             }else{
                 $item['additional_data'] = $model->additional_data;
@@ -160,14 +160,11 @@ class Scene extends AbstractScene
             $item['name'] = $item['name'] ?? '';
             if (isset($item['additional_data'])){
                 if (empty($item['additional_data']['menu_permission'])){
-                    $item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
+                    //$item['additional_data']['menu_permission'] = $item['additional_data']['menu_route'];
                 }
             }else{
                 $item['additional_data'] = [];
             }
-
-
-
             //$item['additional_data'] = $item['additional_data'] ?? [];
             $item['sort_order'] = $item['sort_order'] ?? 999;
             $item['created_by'] = $item['created_by'] ?? $user->id;
