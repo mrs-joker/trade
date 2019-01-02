@@ -59,6 +59,7 @@ class TradeManager
         if (is_string($scene)) {
 
             $sceneClass = sprintf('MrsJoker\\Trade\\%s\\Scene', ucfirst($scene));
+
             if (isset($this->config[$scene]) && class_exists($sceneClass)) {
                 $sceneModel = new $sceneClass;
                 $sceneModel->init($this->config[$scene]);
@@ -74,7 +75,7 @@ class TradeManager
                 }
             }
             throw new NotSupportedException(
-                "Scene ({$scene}) could not be instantiated."
+                "Scene ({$sceneClass}) could not be instantiated."
             );
         }
 
