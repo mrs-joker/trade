@@ -1,7 +1,6 @@
 <?php
 namespace MrsJoker\Trade\Tag;
 
-
 use Illuminate\Support\Facades\Cache;
 use MrsJoker\Trade\AbstractScene;
 use MrsJoker\Trade\Exception\NotSupportedException;
@@ -99,7 +98,7 @@ class Scene extends AbstractScene
 
             if ($model->save()) {
                 Cache::tags($model->getTable())->flush();
-                return true;
+                return $model;
             }
 
             throw new NotSupportedException("The server is busy. Please try again later.");
@@ -107,11 +106,22 @@ class Scene extends AbstractScene
         throw new NotSupportedException($error);
     }
 
-    public function destory($item)
+    public function destory($id)
     {
-        // TODO: Implement destoryItem() method.
+        $model = $this->createModel()->findOrFail($id);
+        if ($model->delete()) {
+            Cache::tags($model->getTable())->flush();
+            return true;
+        }
     }
-
+    public function restore($id)
+    {   //soft delete undo's
+        $model = $this->createModel()->onlyTrashed()->findOrFail($id);
+        if ($model->restore()) {
+            Cache::tags($model->getTable())->flush();
+            return true;
+        }
+    }
     /**
      * @param $item
      * @return bool|mixed
@@ -153,7 +163,7 @@ class Scene extends AbstractScene
         if (isset($item['id']) && !empty($item)) {
             $this->update($item);
         } else {
-            $this->add($item);
+            return $this->add($item);
         }
     }
 

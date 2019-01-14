@@ -11,6 +11,7 @@ namespace MrsJoker\Trade\Rbac\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Support\Facades\Route;
 use MrsJoker\Trade\Facades\Trade;
 
 class Permission

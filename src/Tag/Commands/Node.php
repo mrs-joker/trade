@@ -47,10 +47,63 @@ class Node extends AbstractCommands
                 $i++;
             }
         }
-
         return $childItems;
-
     }
+
+    /**
+     * 树状拉取数据
+     * @param int $parentId
+     * @return array
+     */
+    public function runTreesForm($parentId = 0, $items = [], $select = [])
+    {
+
+        if (empty($items)) {
+            return $items;
+        }
+        $childItems = [];
+        $i = 0;
+        foreach ($items as $key => $val) {
+            if ($val->parent_id == $parentId) {
+//                var_dump($val->toArray());
+                $childItems[$i] = $val->toArray();
+                $childItems[$i]['text'] = $val->name;
+//                $childItems[$i]['icon'] = 'glyphicon glyphicon-minus';
+                if ($val->is_leaf_node) {
+                    $childItems[$i]['selectable'] = false;
+                    $childItems[$i]['state'] = [
+                        'checked' => in_array($val->quantification_id, $select) ? true : false,
+                        'disabled' => false,
+                        'expanded' => true,
+                        'selected' => false,
+                    ];
+
+                } else {
+                    $childItems[$i]['selectable'] = false;
+                    $childItems[$i]['state'] = [
+                        'checked' => false,
+                        'disabled' => false,
+                        'expanded' => true,
+                        'selected' => false,
+                    ];
+                }
+                $leaf = '树枝结点';
+                if ($val->is_leaf_node) {
+                    $leaf = '叶子结点';
+                }
+                $scene = $this->config['scene'][$val->scene] ?? '';
+                $childItems[$i]['tags'] = ['节点类型:' . $leaf, '场景:' . $scene];
+
+                $child = $this->runTreesForm($val->id, $items, $select);
+                if (!empty($child)) {
+                    $childItems[$i]['nodes'] = $child;
+                }
+                $i++;
+            }
+        }
+        return $childItems;
+    }
+
 
     protected function validator($item, $model = null)
     {
